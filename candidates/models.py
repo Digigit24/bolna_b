@@ -15,8 +15,7 @@ class Candidate(models.Model):
     class Status(models.TextChoices):
         NEW = "new", "New"
         SCREENING = "screening", "Screening"
-        INTERVIEWED = "interviewed", "Interviewed"
-        SHORTLISTED = "shortlisted", "Shortlisted"
+        QUALIFIED = "qualified", "Qualified"
         REJECTED = "rejected", "Rejected"
         HIRED = "hired", "Hired"
 

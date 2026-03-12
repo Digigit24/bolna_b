@@ -31,5 +31,7 @@ urlpatterns = [
     path("api/jobs/", include("jobs.urls")),
     path("api/candidates/", include("candidates.urls")),
     path("api/calls/", include("calls.urls")),
+    path("api/interviews/", include("interviews.urls")),
+    path("api/analytics/", include("analytics.urls")),
     path("api/webhooks/", include("webhooks.urls")),
 ]

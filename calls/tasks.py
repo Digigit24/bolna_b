@@ -69,19 +69,21 @@ def initiate_call_task(self, call_id: str):
     except Exception as exc:
         call.retry_count += 1
         call.error_message = str(exc)
-        retry_index = min(self.request.retries, len(RETRY_DELAYS) - 1)
+        # Next retry index: current attempt (0-based) + 1
+        next_retry = self.request.retries + 1
 
         if self.request.retries < self.max_retries:
+            next_delay = RETRY_DELAYS[min(next_retry, len(RETRY_DELAYS) - 1)]
             call.status = CandidateCall.Status.QUEUED
             call.save(update_fields=["retry_count", "error_message", "status", "updated_at"])
             logger.warning(
                 "Call %s failed (attempt %d), retrying in %ds: %s",
                 call_id,
-                self.request.retries + 1,
-                RETRY_DELAYS[retry_index + 1],
+                next_retry,
+                next_delay,
                 exc,
             )
-            raise self.retry(exc=exc, countdown=RETRY_DELAYS[retry_index + 1])
+            raise self.retry(exc=exc, countdown=next_delay)
         else:
             call.status = CandidateCall.Status.FAILED
             call.save(update_fields=["retry_count", "error_message", "status", "updated_at"])

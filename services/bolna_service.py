@@ -5,10 +5,9 @@ All Bolna HTTP calls are centralized here so that views and tasks
 never make direct HTTP requests.  This keeps the codebase modular
 and makes it easy to swap or mock the external dependency.
 
-Methods:
-    start_call(phone, agent_config) → dict
-    get_call_status(call_id)        → dict
-    handle_webhook(payload)         → dict
+Bolna API docs: https://docs.bolna.ai/api-reference/introduction
+Base URL: https://api.bolna.ai
+Auth: Bearer token via Authorization header
 """
 
 import logging
@@ -33,11 +32,11 @@ class BolnaServiceError(Exception):
 
 class BolnaService:
     """
-    Client wrapper around Bolna AI REST API.
+    Client wrapper around Bolna AI REST API (https://api.bolna.ai).
 
     Usage:
         service = BolnaService()
-        result  = service.start_call("+14155551234", {"agent_id": "xyz"})
+        result  = service.start_call("+14155551234", {"agent_id": "uuid"})
     """
 
     def __init__(self):
@@ -51,7 +50,7 @@ class BolnaService:
     # ------------------------------------------------------------------
 
     def _headers(self) -> dict:
-        """Return default headers with auth token."""
+        """Return default headers with Bearer auth token."""
         return {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -60,7 +59,6 @@ class BolnaService:
     def _request(self, method: str, path: str, **kwargs) -> dict:
         """
         Send an HTTP request to Bolna and return the parsed JSON body.
-
         Raises BolnaServiceError on non-2xx responses or network errors.
         """
         url = f"{self.base_url}{path}"
@@ -78,7 +76,6 @@ class BolnaService:
             logger.error("Bolna timeout: %s", exc)
             raise BolnaServiceError("Bolna API request timed out") from exc
 
-        # Parse response body
         try:
             body = response.json()
         except ValueError:
@@ -92,19 +89,21 @@ class BolnaService:
         return body
 
     # ------------------------------------------------------------------
-    # Public API methods
+    # Call endpoints
     # ------------------------------------------------------------------
 
     def start_call(self, phone: str, agent_config: dict | None = None) -> dict:
         """
-        Initiate an outbound call to the given phone number.
+        Initiate an outbound call via Bolna.
+        Endpoint: POST /call
 
         Args:
-            phone:        E.164 formatted phone number (e.g. "+14155551234")
-            agent_config: Bolna agent configuration dict (agent_id, prompts, etc.)
+            phone:        E.164 phone number (e.g. "+14155551234")
+            agent_config: Dict with at least {"agent_id": "uuid"}.
+                          Optionally: from_phone_number, retry_config.
 
         Returns:
-            Dict with at least {"call_id": "...", "status": "initiated"}
+            {"call_id": "...", "status": "queued"}
         """
         payload = {
             "recipient_phone_number": phone,
@@ -114,48 +113,139 @@ class BolnaService:
 
         logger.info("Starting call to %s", phone)
         result = self._request("POST", "/call", json=payload)
-        logger.info("Call started: %s", result.get("call_id"))
+        logger.info("Call started: %s", result.get("call_id", result.get("id")))
         return result
 
-    def get_call_status(self, call_id: str) -> dict:
+    def get_execution(self, execution_id: str) -> dict:
         """
-        Poll Bolna for the current status of a call.
+        Get full details of a call execution.
+        Endpoint: GET /executions/{execution_id}
+
+        Returns dict with: id, status, conversation_time, transcript,
+        telephony_data (recording_url, duration, hangup_by, etc.),
+        extracted_data, cost_breakdown, total_cost.
+        """
+        logger.debug("Fetching execution %s", execution_id)
+        return self._request("GET", f"/executions/{execution_id}")
+
+    def stop_call(self, execution_id: str) -> dict:
+        """
+        Cancel a queued or scheduled call.
+        Endpoint: POST /call/{execution_id}/stop
+        """
+        logger.info("Stopping call %s", execution_id)
+        return self._request("POST", f"/call/{execution_id}/stop")
+
+    # ------------------------------------------------------------------
+    # Agent endpoints (v2)
+    # ------------------------------------------------------------------
+
+    def create_agent(self, agent_config: dict, agent_prompts: dict) -> dict:
+        """
+        Create a new voice AI agent.
+        Endpoint: POST /v2/agent
 
         Args:
-            call_id: The Bolna call ID.
+            agent_config: Dict with agent_name, agent_welcome_message,
+                          webhook_url, tasks (array of task configs).
+            agent_prompts: Dict like {"task_1": {"system_prompt": "..."}}.
 
         Returns:
-            Dict with call details (status, duration, transcript, etc.)
+            {"agent_id": "uuid", "status": "created"}
         """
-        logger.debug("Fetching status for call %s", call_id)
-        return self._request("GET", f"/call/{call_id}")
+        payload = {
+            "agent_config": agent_config,
+            "agent_prompts": agent_prompts,
+        }
+        logger.info("Creating Bolna agent: %s", agent_config.get("agent_name"))
+        return self._request("POST", "/v2/agent", json=payload)
+
+    def get_agent(self, agent_id: str) -> dict:
+        """
+        Retrieve agent configuration.
+        Endpoint: GET /v2/agent/{agent_id}
+        """
+        return self._request("GET", f"/v2/agent/{agent_id}")
+
+    def list_agents(self, page: int = 1, page_size: int = 20) -> dict:
+        """
+        List all agents for the account.
+        Endpoint: GET /v2/agent/all
+        """
+        return self._request("GET", "/v2/agent/all", params={
+            "page_number": page,
+            "page_size": page_size,
+        })
+
+    def update_agent(self, agent_id: str, updates: dict) -> dict:
+        """
+        Partial update of an agent (name, prompt, voice, webhook, etc.).
+        Endpoint: PATCH /v2/agent/{agent_id}
+        """
+        return self._request("PATCH", f"/v2/agent/{agent_id}", json=updates)
+
+    def delete_agent(self, agent_id: str) -> dict:
+        """
+        Delete an agent and all its data.
+        Endpoint: DELETE /v2/agent/{agent_id}
+        """
+        logger.warning("Deleting Bolna agent %s", agent_id)
+        return self._request("DELETE", f"/v2/agent/{agent_id}")
+
+    def list_agent_executions(self, agent_id: str, page: int = 1, page_size: int = 20) -> dict:
+        """
+        List all call executions for an agent.
+        Endpoint: GET /v2/agent/{agent_id}/executions
+        """
+        return self._request("GET", f"/v2/agent/{agent_id}/executions", params={
+            "page_number": page,
+            "page_size": page_size,
+        })
+
+    # ------------------------------------------------------------------
+    # Batch endpoints
+    # ------------------------------------------------------------------
+
+    def get_batch_status(self, batch_id: str) -> dict:
+        """Endpoint: GET /batches/{batch_id}"""
+        return self._request("GET", f"/batches/{batch_id}")
+
+    # ------------------------------------------------------------------
+    # Webhook normalization (no HTTP call — pure data transform)
+    # ------------------------------------------------------------------
 
     def handle_webhook(self, payload: dict) -> dict:
         """
-        Process an inbound webhook payload from Bolna.
+        Normalize an inbound webhook payload from Bolna.
 
-        This does NOT make an outbound HTTP call — it simply validates
-        and normalizes the webhook data so the caller can persist it.
-
-        Args:
-            payload: Raw webhook JSON body from Bolna.
-
-        Returns:
-            Normalized dict with keys:
-                call_id, status, duration, transcript, recording_url
+        Bolna sends the execution object directly. Key fields:
+          - id: execution ID (= our bolna_call_id)
+          - status: completed, failed, no-answer, busy, etc.
+          - conversation_time: seconds
+          - transcript: full text
+          - telephony_data.recording_url: audio file URL
+          - telephony_data.duration: call duration
+          - extracted_data: structured extraction from the call
+          - total_cost: cost in cents
         """
-        call_id = payload.get("call_id", "")
-        event_type = payload.get("event", payload.get("type", "unknown"))
+        # The execution ID is in 'id' (not 'call_id')
+        execution_id = payload.get("id", payload.get("call_id", ""))
+        telephony = payload.get("telephony_data", {})
+        status = payload.get("status", "")
 
-        logger.info("Webhook received: event=%s call_id=%s", event_type, call_id)
+        logger.info("Webhook received: execution_id=%s status=%s", execution_id, status)
 
-        # Normalize fields across possible payload shapes
-        normalized = {
-            "call_id": call_id,
-            "status": payload.get("status", ""),
-            "duration": payload.get("duration", 0),
+        return {
+            "execution_id": execution_id,
+            "status": status,
+            "duration": int(telephony.get("duration", 0) if telephony.get("duration") else 0),
             "transcript": payload.get("transcript", ""),
-            "recording_url": payload.get("recording_url", ""),
+            "recording_url": telephony.get("recording_url", ""),
+            "conversation_time": payload.get("conversation_time", 0),
+            "extracted_data": payload.get("extracted_data", {}),
+            "total_cost": payload.get("total_cost", 0),
+            "hangup_by": telephony.get("hangup_by", ""),
+            "hangup_reason": telephony.get("hangup_reason", ""),
+            "answered_by_voicemail": payload.get("answered_by_voice_mail", False),
+            "error_message": payload.get("error_message", ""),
         }
-
-        return normalized

@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     "candidates.apps.CandidatesConfig",
     "calls.apps.CallsConfig",
     "webhooks.apps.WebhooksConfig",
+    "interviews.apps.InterviewsConfig",
+    "analytics.apps.AnalyticsConfig",
 ]
 
 MIDDLEWARE = [
@@ -209,7 +211,7 @@ AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_S3_CUSTOM_DOMAIN", "")
 # ---------------------------------------------------------------------------
 
 BOLNA_API_KEY = os.getenv("BOLNA_API_KEY", "")
-BOLNA_API_BASE_URL = os.getenv("BOLNA_API_BASE_URL", "https://api.bolna.dev")
+BOLNA_API_BASE_URL = os.getenv("BOLNA_API_BASE_URL", "https://api.bolna.ai")
 
 # ---------------------------------------------------------------------------
 # Logging
