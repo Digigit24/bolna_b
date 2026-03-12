@@ -6,6 +6,7 @@ django-filter>=23.5,<25.0
 
 # Database
 psycopg2-binary>=2.9,<3.0
+dj-database-url>=2.1,<4.0
 
 # Async task queue
 celery>=5.3,<6.0

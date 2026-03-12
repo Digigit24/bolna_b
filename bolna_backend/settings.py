@@ -8,6 +8,8 @@ works in dev (Docker Compose) and production (K8s / ECS).
 import os
 from pathlib import Path
 
+import dj_database_url
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -92,22 +94,31 @@ AUTH_USER_MODEL = "users.User"
 # Database — PostgreSQL in production, SQLite fallback for quick local dev
 # ---------------------------------------------------------------------------
 
-_db_engine = os.getenv("DB_ENGINE", "django.db.backends.postgresql")
+_database_url = os.getenv("DATABASE_URL")
 
-DATABASES = {
-    "default": {
-        "ENGINE": _db_engine,
-        "NAME": os.getenv("DB_NAME", "bolna_hr"),
-        "USER": os.getenv("DB_USER", "postgres"),
-        "PASSWORD": os.getenv("DB_PASSWORD", "postgres"),
-        "HOST": os.getenv("DB_HOST", "localhost"),
-        "PORT": os.getenv("DB_PORT", "5432"),
+if _database_url:
+    # Parse DATABASE_URL (works with Neon, Supabase, Railway, Heroku, etc.)
+    DATABASES = {
+        "default": dj_database_url.parse(_database_url, conn_max_age=600),
     }
-}
+else:
+    # Fallback to individual DB_* env vars
+    _db_engine = os.getenv("DB_ENGINE", "django.db.backends.postgresql")
+    DATABASES = {
+        "default": {
+            "ENGINE": _db_engine,
+            "NAME": os.getenv("DB_NAME", "bolna_hr"),
+            "USER": os.getenv("DB_USER", "postgres"),
+            "PASSWORD": os.getenv("DB_PASSWORD", "postgres"),
+            "HOST": os.getenv("DB_HOST", "localhost"),
+            "PORT": os.getenv("DB_PORT", "5432"),
+        }
+    }
 
 # PostgreSQL-specific connection options
-if "postgresql" in _db_engine:
-    DATABASES["default"]["OPTIONS"] = {"connect_timeout": 5}
+if "postgresql" in DATABASES["default"].get("ENGINE", ""):
+    DATABASES["default"].setdefault("OPTIONS", {})
+    DATABASES["default"]["OPTIONS"]["connect_timeout"] = 5
 
 # ---------------------------------------------------------------------------
 # Password validation
