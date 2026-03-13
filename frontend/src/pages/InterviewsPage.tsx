@@ -19,14 +19,13 @@ export default function InterviewsPage() {
   return (
     <div className="space-y-6 fade-in">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">Interviews</h2>
         <p className="text-sm text-slate-500">{isError ? 'Unable to load' : `${data?.count ?? interviews.length} scheduled`}</p>
       </div>
 
       <Card>
         {isLoading ? (
           <div className="space-y-3 p-6">
-            <div className="skeleton h-11 w-full" />
+            <div className="skeleton h-10 w-full" />
             {[1, 2, 3].map((i) => <div key={i} className="skeleton h-14 w-full" style={{ opacity: 1 - i * 0.2 }} />)}
           </div>
         ) : isError ? (

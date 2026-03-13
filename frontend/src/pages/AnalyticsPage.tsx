@@ -31,11 +31,6 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6 fade-in">
-      <div>
-        <h2 className="text-lg font-semibold text-slate-900">Analytics</h2>
-        <p className="text-sm text-slate-500">Call performance and insights</p>
-      </div>
-
       {hasError && (
         <ErrorState
           compact
@@ -45,17 +40,17 @@ export default function AnalyticsPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map(({ label, value, icon: Icon, bg, fg }) => (
-          <Card key={label} className="hover:shadow-md transition-shadow duration-200">
-            <CardContent className="p-6">
+          <Card key={label} className="transition-shadow hover:shadow-md">
+            <CardContent className="p-5">
               <div className="flex items-center justify-between">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${bg}`}>
-                  <Icon className={`h-5 w-5 ${fg}`} />
+                <p className="text-sm text-slate-500">{label}</p>
+                <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${bg}`}>
+                  <Icon className={`h-4 w-4 ${fg}`} />
                 </div>
               </div>
-              <p className="mt-4 text-2xl font-bold tracking-tight text-slate-900">{value}</p>
-              <p className="mt-1 text-sm text-slate-500">{label}</p>
+              <p className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{value}</p>
             </CardContent>
           </Card>
         ))}
@@ -67,7 +62,7 @@ export default function AnalyticsPage() {
           <CardHeader><CardTitle>Calls by Status (30 days)</CardTitle></CardHeader>
           <CardContent>
             {Object.keys(byStatus).length > 0 ? (
-              <div className="space-y-5">
+              <div className="space-y-4">
                 {Object.entries(byStatus).map(([status, count]) => {
                   const total = Object.values(byStatus).reduce((s: number, v) => s + (v as number), 0)
                   const pct = total > 0 ? Math.round(((count as number) / total) * 100) : 0
@@ -78,7 +73,7 @@ export default function AnalyticsPage() {
                         <span className="font-medium capitalize text-slate-700">{status}</span>
                         <span className="tabular-nums text-slate-500">{count as number} ({pct}%)</span>
                       </div>
-                      <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
                         <div className={`h-full rounded-full transition-all duration-500 ${color}`} style={{ width: `${pct}%` }} />
                       </div>
                     </div>
@@ -86,9 +81,9 @@ export default function AnalyticsPage() {
                 })}
               </div>
             ) : (
-              <div className="py-12 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100">
-                  <BarChart3 className="h-5 w-5 text-slate-400" />
+              <div className="py-10 text-center">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100">
+                  <BarChart3 className="h-4 w-4 text-slate-400" />
                 </div>
                 <p className="mt-3 text-sm text-slate-500">No call data available yet</p>
                 <p className="mt-1 text-xs text-slate-400">Start making calls to see analytics</p>
@@ -104,20 +99,20 @@ export default function AnalyticsPage() {
             {daily.length > 0 ? (
               <div className="divide-y divide-slate-50">
                 {daily.map((d: { day: string; total: number; completed: number; failed: number }) => (
-                  <div key={d.day} className="flex items-center justify-between py-3.5">
+                  <div key={d.day} className="flex items-center justify-between py-3">
                     <span className="text-sm text-slate-600">{d.day}</span>
-                    <div className="flex items-center gap-5 text-sm">
+                    <div className="flex items-center gap-4 text-sm">
                       <span className="font-semibold tabular-nums text-slate-900">{d.total}</span>
-                      <span className="flex items-center gap-1.5 text-emerald-600"><span className="h-2 w-2 rounded-full bg-emerald-500" />{d.completed}</span>
-                      <span className="flex items-center gap-1.5 text-red-500"><span className="h-2 w-2 rounded-full bg-red-500" />{d.failed}</span>
+                      <span className="flex items-center gap-1.5 text-emerald-600"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{d.completed}</span>
+                      <span className="flex items-center gap-1.5 text-red-500"><span className="h-1.5 w-1.5 rounded-full bg-red-500" />{d.failed}</span>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="py-12 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100">
-                  <BarChart3 className="h-5 w-5 text-slate-400" />
+              <div className="py-10 text-center">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100">
+                  <BarChart3 className="h-4 w-4 text-slate-400" />
                 </div>
                 <p className="mt-3 text-sm text-slate-500">No daily data available</p>
                 <p className="mt-1 text-xs text-slate-400">Data will appear after your first calls</p>

@@ -33,19 +33,16 @@ export default function JobsPage() {
   return (
     <div className="space-y-6 fade-in">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900">Jobs</h2>
-          <p className="text-sm text-slate-500">{isError ? 'Unable to load' : `${data?.count ?? jobs.length} positions`}</p>
-        </div>
-        <Button onClick={() => setShowModal(true)}>
-          <Plus className="h-4 w-4" /> New Job
+        <p className="text-sm text-slate-500">{isError ? 'Unable to load' : `${data?.count ?? jobs.length} positions`}</p>
+        <Button onClick={() => setShowModal(true)} size="sm">
+          <Plus className="h-3.5 w-3.5" /> New Job
         </Button>
       </div>
 
       <Card>
         {isLoading ? (
           <div className="space-y-3 p-6">
-            <div className="skeleton h-11 w-full" />
+            <div className="skeleton h-10 w-full" />
             {[1, 2, 3].map((i) => <div key={i} className="skeleton h-14 w-full" style={{ opacity: 1 - i * 0.2 }} />)}
           </div>
         ) : isError ? (
@@ -73,11 +70,11 @@ export default function JobsPage() {
                   <TableRow key={j.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50">
-                          <Briefcase className="h-4 w-4 text-indigo-600" />
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50">
+                          <Briefcase className="h-3.5 w-3.5 text-indigo-600" />
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-slate-900">{j.title}</p>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-slate-900">{j.title}</p>
                           {j.description && <p className="mt-0.5 max-w-md truncate text-xs text-slate-400">{j.description}</p>}
                         </div>
                       </div>
@@ -92,9 +89,9 @@ export default function JobsPage() {
                     <TableCell>
                       <button
                         onClick={() => { if (confirm('Delete this job?')) deleteMutation.mutate(j.id) }}
-                        className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                        className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </TableCell>
                   </TableRow>

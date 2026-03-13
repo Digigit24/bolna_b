@@ -51,12 +51,9 @@ export default function CandidatesPage() {
     <div className="space-y-6 fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900">Candidates</h2>
-          <p className="text-sm text-slate-500">{isError ? 'Unable to load count' : `${data?.count ?? candidates.length} total candidates`}</p>
-        </div>
-        <Button onClick={() => setShowModal(true)}>
-          <Plus className="h-4 w-4" /> Add Candidate
+        <p className="text-sm text-slate-500">{isError ? 'Unable to load count' : `${data?.count ?? candidates.length} total candidates`}</p>
+        <Button onClick={() => setShowModal(true)} size="sm">
+          <Plus className="h-3.5 w-3.5" /> Add Candidate
         </Button>
       </div>
 
@@ -64,13 +61,13 @@ export default function CandidatesPage() {
       <Card>
         <CardContent className="flex items-center gap-4 p-4">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
-            <Input placeholder="Search by name..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <Input placeholder="Search by name..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 text-[13px]" />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 rounded-lg border border-slate-300 bg-white px-3 pr-8 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="h-9 rounded-lg border border-slate-200 bg-white px-3 pr-8 text-[13px] text-slate-700 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
           >
             <option value="">All Statuses</option>
             <option value="new">New</option>
@@ -98,7 +95,7 @@ export default function CandidatesPage() {
       <Card>
         {isLoading ? (
           <div className="space-y-3 p-6">
-            <div className="skeleton h-11 w-full" />
+            <div className="skeleton h-10 w-full" />
             {[1, 2, 3, 4, 5].map((i) => <div key={i} className="skeleton h-14 w-full" style={{ opacity: 1 - i * 0.12 }} />)}
           </div>
         ) : isError ? (
@@ -131,13 +128,13 @@ export default function CandidatesPage() {
                     <TableRow key={c.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 text-xs font-bold text-indigo-700">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 text-[10px] font-bold text-indigo-700">
                             {c.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                           </div>
-                          <div>
-                            <p className="text-sm font-medium text-slate-900">{c.name}</p>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-slate-900">{c.name}</p>
                             {c.skills?.length > 0 && (
-                              <p className="text-xs text-slate-400">{c.skills.slice(0, 3).join(', ')}</p>
+                              <p className="truncate text-xs text-slate-400">{c.skills.slice(0, 3).join(', ')}</p>
                             )}
                           </div>
                         </div>
@@ -239,7 +236,7 @@ function AddCandidateModal({ open, onClose }: { open: boolean; onClose: () => vo
             value={form.job}
             onChange={(e) => setForm({ ...form, job: e.target.value })}
             required
-            className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
           >
             <option value="">Select a position</option>
             {jobs.map((j: { id: string; title: string }) => <option key={j.id} value={j.id}>{j.title}</option>)}
