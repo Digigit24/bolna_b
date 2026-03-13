@@ -35,7 +35,7 @@ export default function JobsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Jobs</h2>
-          <p className="text-sm text-slate-500">{isError ? 'Unable to load' : `${jobs.length} positions`}</p>
+          <p className="text-sm text-slate-500">{isError ? 'Unable to load' : `${data?.count ?? jobs.length} positions`}</p>
         </div>
         <Button onClick={() => setShowModal(true)}>
           <Plus className="h-4 w-4" /> New Job

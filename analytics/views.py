@@ -15,6 +15,7 @@ import logging
 from datetime import timedelta
 
 from django.db.models import Avg, Count, Q, Sum
+from django.db.models.functions import TruncDate
 from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -119,10 +120,10 @@ class CallAnalyticsView(APIView):
             created_at__gte=start_date,
         )
 
-        # Daily breakdown
+        # Daily breakdown using TruncDate (database-agnostic, no ambiguity)
         daily = (
             org_calls
-            .extra(select={"day": "DATE(created_at)"})
+            .annotate(day=TruncDate("created_at"))
             .values("day")
             .annotate(
                 total=Count("id"),

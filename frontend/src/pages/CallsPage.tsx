@@ -25,7 +25,7 @@ export default function CallsPage() {
     <div className="space-y-6 fade-in">
       <div>
         <h2 className="text-lg font-semibold text-slate-900">Calls</h2>
-        <p className="text-sm text-slate-500">{isError ? 'Unable to load' : `${calls.length} total calls`}</p>
+        <p className="text-sm text-slate-500">{isError ? 'Unable to load' : `${data?.count ?? calls.length} total calls`}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">

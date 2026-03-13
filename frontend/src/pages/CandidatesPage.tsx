@@ -17,6 +17,7 @@ export default function CandidatesPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [callFeedback, setCallFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const queryClient = useQueryClient()
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -31,7 +32,17 @@ export default function CandidatesPage() {
 
   const callMutation = useMutation({
     mutationFn: (candidateId: string) => startCall({ candidate_id: candidateId }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['candidates'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['candidates'] })
+      queryClient.invalidateQueries({ queryKey: ['calls'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      setCallFeedback({ type: 'success', message: 'Call queued successfully. The AI agent will call the candidate shortly.' })
+      setTimeout(() => setCallFeedback(null), 5000)
+    },
+    onError: () => {
+      setCallFeedback({ type: 'error', message: 'Failed to initiate call. Please try again.' })
+      setTimeout(() => setCallFeedback(null), 5000)
+    },
   })
 
   const candidates = data?.results ?? []
@@ -42,7 +53,7 @@ export default function CandidatesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Candidates</h2>
-          <p className="text-sm text-slate-500">{isError ? 'Unable to load count' : `${candidates.length} total candidates`}</p>
+          <p className="text-sm text-slate-500">{isError ? 'Unable to load count' : `${data?.count ?? candidates.length} total candidates`}</p>
         </div>
         <Button onClick={() => setShowModal(true)}>
           <Plus className="h-4 w-4" /> Add Candidate
@@ -70,6 +81,18 @@ export default function CandidatesPage() {
           </select>
         </CardContent>
       </Card>
+
+      {/* Call feedback */}
+      {callFeedback && (
+        <div className={`flex items-center gap-2 rounded-lg border px-4 py-3 text-sm ${
+          callFeedback.type === 'success'
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+            : 'border-red-200 bg-red-50 text-red-800'
+        }`}>
+          <span>{callFeedback.message}</span>
+          <button onClick={() => setCallFeedback(null)} className="ml-auto text-current opacity-60 hover:opacity-100">&times;</button>
+        </div>
+      )}
 
       {/* Table */}
       <Card>

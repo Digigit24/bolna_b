@@ -20,7 +20,7 @@ export default function InterviewsPage() {
     <div className="space-y-6 fade-in">
       <div>
         <h2 className="text-lg font-semibold text-slate-900">Interviews</h2>
-        <p className="text-sm text-slate-500">{isError ? 'Unable to load' : `${interviews.length} scheduled`}</p>
+        <p className="text-sm text-slate-500">{isError ? 'Unable to load' : `${data?.count ?? interviews.length} scheduled`}</p>
       </div>
 
       <Card>
