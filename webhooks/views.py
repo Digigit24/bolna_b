@@ -101,10 +101,13 @@ class BolnaWebhookView(APIView):
 
         # On completed: trigger async transcript processing → AI summary
         if call.status == CandidateCall.Status.COMPLETED:
-            process_transcript_task.delay(
-                call_id=str(call.id),
-                transcript=normalized.get("transcript", ""),
-                recording_url=normalized.get("recording_url", ""),
-            )
+            try:
+                process_transcript_task.delay(
+                    call_id=str(call.id),
+                    transcript=normalized.get("transcript", ""),
+                    recording_url=normalized.get("recording_url", ""),
+                )
+            except Exception as exc:
+                logger.error("Failed to dispatch transcript task: %s", exc)
 
         return Response({"status": "ok"})

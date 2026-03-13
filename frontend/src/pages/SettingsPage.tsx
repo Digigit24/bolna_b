@@ -2,74 +2,95 @@ import { useQuery } from '@tanstack/react-query'
 import { getProfile } from '@/api/endpoints'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
+import { ErrorState } from '@/components/ui/ErrorState'
+import { User, Key, Globe, Shield, Webhook, ExternalLink } from 'lucide-react'
 
 export default function SettingsPage() {
-  const { data: profile } = useQuery({
+  const { data: profile, isError, refetch } = useQuery({
     queryKey: ['profile'],
     queryFn: () => getProfile().then((r) => r.data),
+    retry: 2,
   })
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Settings</h1>
+    <div className="space-y-6 fade-in">
+      {isError && (
+        <ErrorState
+          compact
+          title="Could not load profile data"
+          onRetry={() => refetch()}
+        />
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Profile */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50">
+              <User className="h-4 w-4 text-indigo-600" />
+            </div>
             <CardTitle>Profile</CardTitle>
           </CardHeader>
           <CardContent>
             {profile ? (
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs text-gray-500 uppercase">Name</p>
-                  <p className="text-gray-900">
-                    {profile.first_name} {profile.last_name}
-                  </p>
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 rounded-lg border border-slate-100 bg-slate-50/50 p-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-base font-bold text-white">
+                    {profile.first_name?.[0]?.toUpperCase() || profile.username?.[0]?.toUpperCase() || 'U'}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-900">{profile.first_name} {profile.last_name}</p>
+                    <p className="truncate text-sm text-slate-500">@{profile.username}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-500 uppercase">Username</p>
-                  <p className="text-gray-900">{profile.username}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 uppercase">Email</p>
-                  <p className="text-gray-900">{profile.email}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 uppercase">Role</p>
-                  <Badge variant="default">{profile.role}</Badge>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 uppercase">Organization</p>
-                  <p className="text-gray-900">{profile.organization_name || 'None'}</p>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between rounded-lg border border-slate-100 px-4 py-3">
+                    <span className="text-sm text-slate-500">Email</span>
+                    <span className="truncate pl-4 text-sm font-medium text-slate-900">{profile.email || 'Not set'}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg border border-slate-100 px-4 py-3">
+                    <span className="text-sm text-slate-500">Role</span>
+                    <Badge className="capitalize">{profile.role}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg border border-slate-100 px-4 py-3">
+                    <span className="text-sm text-slate-500">Organization</span>
+                    <span className="truncate pl-4 text-sm font-medium text-slate-900">{profile.organization_name || 'None'}</span>
+                  </div>
                 </div>
               </div>
-            ) : (
-              <p className="text-gray-500">Loading...</p>
-            )}
+            ) : !isError ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => <div key={i} className="skeleton h-12 w-full" />)}
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 
-        {/* API Info */}
+        {/* API */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50">
+              <Key className="h-4 w-4 text-emerald-600" />
+            </div>
             <CardTitle>API Configuration</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3 text-sm">
-              <div>
-                <p className="text-xs text-gray-500 uppercase">Backend API</p>
-                <p className="text-gray-900 font-mono text-xs">/api/</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase">Auth Method</p>
-                <p className="text-gray-900">Token Authentication</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase">Bolna Webhook</p>
-                <p className="text-gray-900 font-mono text-xs">POST /api/webhooks/bolna/</p>
-              </div>
+            <div className="space-y-2">
+              {[
+                { icon: <Globe className="h-4 w-4 text-indigo-500" />, label: 'Backend API', value: '/api/', mono: true },
+                { icon: <Shield className="h-4 w-4 text-emerald-500" />, label: 'Auth Method', value: 'Token Authentication', mono: false },
+                { icon: <Webhook className="h-4 w-4 text-purple-500" />, label: 'Bolna Webhook', value: 'POST /api/webhooks/bolna/', mono: true },
+                { icon: <ExternalLink className="h-4 w-4 text-amber-500" />, label: 'API Docs', value: '/api/docs/', mono: true, hint: 'Swagger UI' },
+              ].map(({ icon, label, value, mono, hint }) => (
+                <div key={label} className="flex items-start gap-3 rounded-lg border border-slate-100 bg-slate-50/50 p-4">
+                  <div className="mt-0.5 shrink-0">{icon}</div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase tracking-wider text-slate-400">{label}</p>
+                    <p className={`mt-0.5 truncate text-sm text-slate-700 ${mono ? 'font-mono' : ''}`}>{value}</p>
+                    {hint && <p className="mt-0.5 text-xs text-slate-400">{hint}</p>}
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

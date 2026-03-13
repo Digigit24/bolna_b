@@ -88,8 +88,20 @@ class StartCallView(APIView):
             status=CandidateCall.Status.QUEUED,
         )
 
-        # Dispatch async task
-        initiate_call_task.delay(str(call.id))
+        # Dispatch async task — gracefully handle broker unavailability
+        try:
+            initiate_call_task.delay(str(call.id))
+        except Exception as exc:
+            logger.error(
+                "Failed to dispatch call task (broker down?): %s", exc,
+            )
+            call.status = CandidateCall.Status.FAILED
+            call.error_message = "Task broker unavailable. Please try again later."
+            call.save(update_fields=["status", "error_message"])
+            return Response(
+                CandidateCallSerializer(call).data,
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
         logger.info(
             "Call queued: call_id=%s candidate=%s",
@@ -112,7 +124,7 @@ class CallTranscriptView(generics.RetrieveAPIView):
     def get_queryset(self):
         return CandidateCall.objects.filter(
             candidate__organization=self.request.organization,
-        )
+        ).select_related("candidate")
 
     def retrieve(self, request, *args, **kwargs):
         call = self.get_object()
@@ -123,4 +135,6 @@ class CallTranscriptView(generics.RetrieveAPIView):
             "ai_score": call.ai_score,
             "summary": call.summary,
             "recording_url": call.recording_url,
+            "status": call.status,
+            "duration": call.duration,
         })
