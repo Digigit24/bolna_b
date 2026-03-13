@@ -20,7 +20,7 @@ export default function Sidebar() {
   return (
     <div className="flex h-full w-64 flex-col bg-white border-r border-gray-200 shadow-sm transition-all duration-300">
       <div className="flex h-16 items-center px-6 border-b border-gray-100">
-        <h1 className="text-xl font-bold text-indigo-600 tracking-tight">Bolna<span className="text-gray-800">HR</span></h1>
+        <h1 className="text-xl font-bold text-indigo-600 tracking-tight">hr<span className="text-gray-800"> management</span></h1>
       </div>
       
       <div className="flex-1 overflow-y-auto px-4 py-6">

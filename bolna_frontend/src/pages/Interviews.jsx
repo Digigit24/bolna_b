@@ -3,6 +3,7 @@ import api from '../api/apiClient';
 import { CalendarDays, Plus, Search, Filter, Edit, Trash2, X, Clock, User, Star } from 'lucide-react';
 import PageLoader from '../components/ui/PageLoader';
 import { cn } from '../lib/utils';
+import useDebounce from '../hooks/useDebounce';
 import { format } from 'date-fns';
 
 export default function Interviews() {
@@ -11,6 +12,7 @@ export default function Interviews() {
   
   // Filters
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [status, setStatus] = useState('');
   const [interviewType, setInterviewType] = useState('');
 
@@ -37,7 +39,7 @@ export default function Interviews() {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      if (search) params.append('search', search);
+      if (debouncedSearch) params.append('search', debouncedSearch);
       if (status) params.append('status', status);
       if (interviewType) params.append('interview_type', interviewType);
       
@@ -60,7 +62,7 @@ export default function Interviews() {
 
   useEffect(() => {
     fetchInterviews();
-  }, [search, status, interviewType]);
+  }, [debouncedSearch, status, interviewType]);
 
   const openAddModal = () => {
     setIsEditMode(false);
