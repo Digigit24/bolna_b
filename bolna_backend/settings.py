@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_filters",
     "django_celery_results",
+    "drf_spectacular",
     # Local apps
     "users.apps.UsersConfig",
     "organizations.apps.OrganizationsConfig",
@@ -179,6 +180,25 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 25,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# ---------------------------------------------------------------------------
+# API Documentation (drf-spectacular)
+# ---------------------------------------------------------------------------
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "HR AI Caller API",
+    "DESCRIPTION": "Backend API for HR AI Calling SaaS — powered by Bolna",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "persistAuthorization": True,
+        "displayOperationId": False,
+    },
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": "/api/",
 }
 
 # ---------------------------------------------------------------------------

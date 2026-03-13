@@ -9,13 +9,13 @@ export function Badge({ className, variant = 'default', ...props }: BadgeProps) 
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+        'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset',
         {
-          'bg-blue-100 text-blue-800': variant === 'default',
-          'bg-green-100 text-green-800': variant === 'success',
-          'bg-yellow-100 text-yellow-800': variant === 'warning',
-          'bg-red-100 text-red-800': variant === 'destructive',
-          'bg-gray-100 text-gray-800': variant === 'secondary',
+          'bg-indigo-50 text-indigo-700 ring-indigo-600/20': variant === 'default',
+          'bg-emerald-50 text-emerald-700 ring-emerald-600/20': variant === 'success',
+          'bg-amber-50 text-amber-700 ring-amber-600/20': variant === 'warning',
+          'bg-red-50 text-red-700 ring-red-600/20': variant === 'destructive',
+          'bg-slate-50 text-slate-600 ring-slate-500/20': variant === 'secondary',
         },
         className,
       )}
@@ -32,16 +32,23 @@ export function statusVariant(
     case 'completed':
     case 'qualified':
     case 'hired':
+    case 'open':
       return 'success'
     case 'queued':
     case 'screening':
     case 'calling':
     case 'new':
+    case 'scheduled':
       return 'warning'
     case 'failed':
     case 'rejected':
+    case 'canceled':
+    case 'no_show':
       return 'destructive'
-    default:
+    case 'closed':
+    case 'paused':
       return 'secondary'
+    default:
+      return 'default'
   }
 }

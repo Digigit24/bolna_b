@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { Card, CardContent } from './Card'
 import { cn } from '@/lib/utils'
 
 interface StatCardProps {
@@ -12,21 +11,26 @@ interface StatCardProps {
 
 export function StatCard({ title, value, icon, trend, className }: StatCardProps) {
   return (
-    <Card className={cn('', className)}>
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500">{title}</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
-            {trend && <p className="text-xs text-green-600 mt-1">{trend}</p>}
-          </div>
-          {icon && (
-            <div className="h-12 w-12 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-              {icon}
-            </div>
+    <div
+      className={cn(
+        'relative overflow-hidden rounded-xl border border-slate-200/80 bg-white p-6 shadow-sm',
+        className,
+      )}
+    >
+      <div className="flex items-start justify-between">
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-slate-500">{title}</p>
+          <p className="text-3xl font-bold tracking-tight text-slate-900">{value}</p>
+          {trend && (
+            <p className="text-xs font-medium text-emerald-600">{trend}</p>
           )}
         </div>
-      </CardContent>
-    </Card>
+        {icon && (
+          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+            {icon}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

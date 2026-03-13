@@ -1,12 +1,19 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Phone, Plus, Search } from 'lucide-react'
+import { Phone, Plus, Search, Users, X } from 'lucide-react'
 import { getCandidates, startCall, createCandidate } from '@/api/endpoints'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Badge, statusVariant } from '@/components/ui/Badge'
-import { Card } from '@/components/ui/Card'
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/Table'
 
 export default function CandidatesPage() {
   const [search, setSearch] = useState('')
@@ -31,32 +38,40 @@ export default function CandidatesPage() {
   const candidates = data?.results ?? []
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Candidates</h1>
+    <div className="space-y-6">
+      {/* Page header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Candidates</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Manage and screen your candidate pipeline
+          </p>
+        </div>
         <Button onClick={() => setShowAddForm(!showAddForm)}>
-          <Plus className="h-4 w-4 mr-2" /> Add Candidate
+          <Plus className="h-4 w-4" /> Add Candidate
         </Button>
       </div>
 
-      {/* Add form (toggleable) */}
-      {showAddForm && <AddCandidateForm onClose={() => setShowAddForm(false)} />}
+      {/* Add form */}
+      {showAddForm && (
+        <AddCandidateForm onClose={() => setShowAddForm(false)} />
+      )}
 
       {/* Filters */}
-      <div className="flex gap-3 mb-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+      <div className="flex items-center gap-3">
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
-            placeholder="Search candidates..."
+            placeholder="Search by name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="pl-10"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="h-10 rounded-md border border-gray-300 px-3 text-sm bg-white"
+          className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <option value="">All Statuses</option>
           <option value="new">New</option>
@@ -70,17 +85,19 @@ export default function CandidatesPage() {
       {/* Table */}
       <Card>
         {isLoading ? (
-          <div className="p-8 text-center text-gray-500">Loading...</div>
-        ) : (
+          <div className="flex h-48 items-center justify-center">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+          </div>
+        ) : candidates.length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Job</TableHead>
+                <TableHead>Candidate</TableHead>
+                <TableHead>Position</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Experience</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Action</TableHead>
+                <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -96,42 +113,61 @@ export default function CandidatesPage() {
                 }) => (
                   <TableRow key={c.id}>
                     <TableCell>
-                      <div>
-                        <p className="font-medium text-gray-900">{c.name}</p>
-                        <p className="text-xs text-gray-500">
-                          {(c.skills || []).slice(0, 3).join(', ')}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">
+                          {c.name
+                            .split(' ')
+                            .map((n) => n[0])
+                            .join('')
+                            .slice(0, 2)
+                            .toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-slate-900">{c.name}</p>
+                          {c.skills?.length > 0 && (
+                            <p className="truncate text-xs text-slate-400">
+                              {c.skills.slice(0, 3).join(' · ')}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-gray-600">{c.job_title}</TableCell>
-                    <TableCell className="text-gray-600">{c.phone}</TableCell>
-                    <TableCell>{c.experience_years} yrs</TableCell>
+                    <TableCell>{c.job_title || <span className="text-slate-400">-</span>}</TableCell>
+                    <TableCell className="font-mono text-xs">{c.phone}</TableCell>
+                    <TableCell>
+                      {c.experience_years > 0 ? (
+                        <span>{c.experience_years} yrs</span>
+                      ) : (
+                        <span className="text-slate-400">-</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={statusVariant(c.status)}>{c.status}</Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-right">
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => callMutation.mutate(c.id)}
                         disabled={callMutation.isPending}
                       >
-                        <Phone className="h-3.5 w-3.5 mr-1" />
+                        <Phone className="h-3.5 w-3.5" />
                         Call
                       </Button>
                     </TableCell>
                   </TableRow>
                 ),
               )}
-              {candidates.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-gray-500 py-8">
-                    No candidates found
-                  </TableCell>
-                </TableRow>
-              )}
             </TableBody>
           </Table>
+        ) : (
+          <div className="py-16 text-center">
+            <Users className="mx-auto h-10 w-10 text-slate-300" />
+            <p className="mt-3 text-sm font-medium text-slate-500">No candidates found</p>
+            <p className="mt-1 text-xs text-slate-400">
+              Add your first candidate to get started
+            </p>
+          </div>
         )}
       </Card>
     </div>
@@ -169,52 +205,83 @@ function AddCandidateForm({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Card className="mb-4 p-6">
-      <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-        <Input
-          placeholder="Full Name"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          required
-        />
-        <Input
-          placeholder="Phone (+1...)"
-          value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
-          required
-        />
-        <Input
-          placeholder="Email"
-          type="email"
-          value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-        />
-        <Input
-          placeholder="Experience (years)"
-          type="number"
-          value={form.experience_years}
-          onChange={(e) => setForm({ ...form, experience_years: Number(e.target.value) })}
-        />
-        <Input
-          placeholder="Job ID (UUID)"
-          value={form.job}
-          onChange={(e) => setForm({ ...form, job: e.target.value })}
-          required
-        />
-        <Input
-          placeholder="Skills (comma-separated)"
-          value={form.skills}
-          onChange={(e) => setForm({ ...form, skills: e.target.value })}
-        />
-        <div className="col-span-2 flex gap-2">
-          <Button type="submit" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Adding...' : 'Add Candidate'}
-          </Button>
-          <Button type="button" variant="ghost" onClick={onClose}>
-            Cancel
-          </Button>
-        </div>
-      </form>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Add New Candidate</CardTitle>
+        <button
+          onClick={onClose}
+          className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700">Full Name</label>
+            <Input
+              placeholder="John Doe"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700">Phone</label>
+            <Input
+              placeholder="+1 (555) 000-0000"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700">Email</label>
+            <Input
+              placeholder="john@example.com"
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700">Experience (years)</label>
+            <Input
+              type="number"
+              min={0}
+              value={form.experience_years}
+              onChange={(e) =>
+                setForm({ ...form, experience_years: Number(e.target.value) })
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700">Job ID</label>
+            <Input
+              placeholder="Job UUID"
+              value={form.job}
+              onChange={(e) => setForm({ ...form, job: e.target.value })}
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700">Skills</label>
+            <Input
+              placeholder="Python, React, Django..."
+              value={form.skills}
+              onChange={(e) => setForm({ ...form, skills: e.target.value })}
+            />
+          </div>
+          <div className="col-span-full flex items-center gap-3 pt-2">
+            <Button type="submit" disabled={mutation.isPending}>
+              {mutation.isPending ? 'Adding...' : 'Add Candidate'}
+            </Button>
+            <Button type="button" variant="ghost" onClick={onClose}>
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </CardContent>
     </Card>
   )
 }

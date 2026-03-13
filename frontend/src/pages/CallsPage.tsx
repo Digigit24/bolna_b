@@ -1,11 +1,18 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Phone, FileText, X } from 'lucide-react'
+import { Phone, FileText, X, Headphones } from 'lucide-react'
 import { getCalls, getCallTranscript } from '@/api/endpoints'
 import { Button } from '@/components/ui/Button'
 import { Badge, statusVariant } from '@/components/ui/Badge'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/Table'
 import { formatDate, formatDuration } from '@/lib/utils'
 
 export default function CallsPage() {
@@ -20,22 +27,30 @@ export default function CallsPage() {
   const calls = data?.results ?? []
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Call Logs</h1>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Phone className="h-4 w-4" />
-          {calls.length} calls
+    <div className="space-y-6">
+      {/* Page header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Call Logs</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Track and review AI screening calls
+          </p>
+        </div>
+        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500">
+          <Phone className="h-4 w-4 text-slate-400" />
+          <span className="font-medium text-slate-700">{calls.length}</span> calls
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Call list */}
         <div className="lg:col-span-2">
           <Card>
             {isLoading ? (
-              <div className="p-8 text-center text-gray-500">Loading...</div>
-            ) : (
+              <div className="flex h-48 items-center justify-center">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+              </div>
+            ) : calls.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -44,7 +59,7 @@ export default function CallsPage() {
                     <TableHead>Duration</TableHead>
                     <TableHead>AI Score</TableHead>
                     <TableHead>Date</TableHead>
-                    <TableHead>Action</TableHead>
+                    <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -59,40 +74,50 @@ export default function CallsPage() {
                     }) => (
                       <TableRow
                         key={call.id}
-                        className={selectedCallId === call.id ? 'bg-blue-50' : ''}
+                        className={
+                          selectedCallId === call.id
+                            ? 'bg-indigo-50/60 hover:bg-indigo-50/60'
+                            : 'cursor-pointer'
+                        }
+                        onClick={() => setSelectedCallId(call.id)}
                       >
-                        <TableCell className="font-medium">{call.candidate_name}</TableCell>
+                        <TableCell className="font-medium text-slate-900">
+                          {call.candidate_name}
+                        </TableCell>
                         <TableCell>
                           <Badge variant={statusVariant(call.status)}>{call.status}</Badge>
                         </TableCell>
-                        <TableCell className="text-gray-600">
+                        <TableCell className="font-mono text-xs">
                           {call.duration ? formatDuration(call.duration) : '-'}
                         </TableCell>
                         <TableCell>
                           {call.ai_score != null ? (
                             <span
-                              className={
+                              className={`inline-flex h-7 w-10 items-center justify-center rounded-md text-xs font-bold ${
                                 call.ai_score >= 70
-                                  ? 'text-green-600 font-semibold'
+                                  ? 'bg-emerald-50 text-emerald-700'
                                   : call.ai_score >= 40
-                                    ? 'text-yellow-600'
-                                    : 'text-red-600'
-                              }
+                                    ? 'bg-amber-50 text-amber-700'
+                                    : 'bg-red-50 text-red-700'
+                              }`}
                             >
                               {call.ai_score}
                             </span>
                           ) : (
-                            '-'
+                            <span className="text-slate-400">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-gray-500 text-xs">
+                        <TableCell className="text-xs text-slate-500">
                           {formatDate(call.created_at)}
                         </TableCell>
                         <TableCell>
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => setSelectedCallId(call.id)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedCallId(call.id)
+                            }}
                           >
                             <FileText className="h-3.5 w-3.5" />
                           </Button>
@@ -100,15 +125,16 @@ export default function CallsPage() {
                       </TableRow>
                     ),
                   )}
-                  {calls.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center text-gray-500 py-8">
-                        No calls yet
-                      </TableCell>
-                    </TableRow>
-                  )}
                 </TableBody>
               </Table>
+            ) : (
+              <div className="py-16 text-center">
+                <Phone className="mx-auto h-10 w-10 text-slate-300" />
+                <p className="mt-3 text-sm font-medium text-slate-500">No calls yet</p>
+                <p className="mt-1 text-xs text-slate-400">
+                  Start a call from the Candidates page
+                </p>
+              </div>
             )}
           </Card>
         </div>
@@ -116,12 +142,20 @@ export default function CallsPage() {
         {/* Call detail panel */}
         <div className="lg:col-span-1">
           {selectedCallId ? (
-            <CallDetailPanel callId={selectedCallId} onClose={() => setSelectedCallId(null)} />
+            <CallDetailPanel
+              callId={selectedCallId}
+              onClose={() => setSelectedCallId(null)}
+            />
           ) : (
             <Card>
-              <CardContent className="py-12 text-center text-gray-400">
-                <FileText className="h-8 w-8 mx-auto mb-2" />
-                <p className="text-sm">Select a call to view details</p>
+              <CardContent className="py-16 text-center">
+                <Headphones className="mx-auto h-10 w-10 text-slate-300" />
+                <p className="mt-3 text-sm font-medium text-slate-500">
+                  Select a call to view details
+                </p>
+                <p className="mt-1 text-xs text-slate-400">
+                  Click on any row to see the transcript and AI analysis
+                </p>
               </CardContent>
             </Card>
           )}
@@ -131,40 +165,74 @@ export default function CallsPage() {
   )
 }
 
-function CallDetailPanel({ callId, onClose }: { callId: string; onClose: () => void }) {
+function CallDetailPanel({
+  callId,
+  onClose,
+}: {
+  callId: string
+  onClose: () => void
+}) {
   const { data, isLoading } = useQuery({
     queryKey: ['call-transcript', callId],
     queryFn: () => getCallTranscript(callId).then((r) => r.data),
   })
 
   return (
-    <Card>
+    <Card className="sticky top-8">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-base">Call Details</CardTitle>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+        <CardTitle>Call Details</CardTitle>
+        <button
+          onClick={onClose}
+          className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+        >
           <X className="h-4 w-4" />
         </button>
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <p className="text-gray-500 text-sm">Loading...</p>
+          <div className="flex h-32 items-center justify-center">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+          </div>
         ) : data ? (
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wider">Candidate</p>
-              <p className="font-medium">{data.candidate_name}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Candidate
+              </p>
+              <p className="mt-1 text-sm font-medium text-slate-900">
+                {data.candidate_name}
+              </p>
             </div>
 
             {data.ai_score != null && (
               <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider">AI Score</p>
-                <p className="text-2xl font-bold text-blue-600">{data.ai_score}/100</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  AI Score
+                </p>
+                <div className="mt-2 flex items-baseline gap-1">
+                  <span className="text-3xl font-bold text-indigo-600">{data.ai_score}</span>
+                  <span className="text-sm text-slate-400">/100</span>
+                </div>
+                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      data.ai_score >= 70
+                        ? 'bg-emerald-500'
+                        : data.ai_score >= 40
+                          ? 'bg-amber-500'
+                          : 'bg-red-500'
+                    }`}
+                    style={{ width: `${data.ai_score}%` }}
+                  />
+                </div>
               </div>
             )}
 
             {data.recording_url && (
               <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Recording</p>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Recording
+                </p>
                 <audio controls className="w-full" src={data.recording_url}>
                   Your browser does not support audio.
                 </audio>
@@ -173,22 +241,28 @@ function CallDetailPanel({ callId, onClose }: { callId: string; onClose: () => v
 
             {data.summary && (
               <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">AI Summary</p>
-                <p className="text-sm text-gray-700 whitespace-pre-line">{data.summary}</p>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  AI Summary
+                </p>
+                <p className="text-sm leading-relaxed text-slate-600">{data.summary}</p>
               </div>
             )}
 
             {data.transcript && (
               <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Transcript</p>
-                <div className="bg-gray-50 rounded-lg p-3 max-h-80 overflow-y-auto">
-                  <p className="text-sm text-gray-600 whitespace-pre-line">{data.transcript}</p>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Transcript
+                </p>
+                <div className="max-h-72 overflow-y-auto rounded-lg border border-slate-100 bg-slate-50 p-3">
+                  <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600">
+                    {data.transcript}
+                  </p>
                 </div>
               </div>
             )}
           </div>
         ) : (
-          <p className="text-gray-500 text-sm">No data available</p>
+          <p className="text-sm text-slate-500">No data available</p>
         )}
       </CardContent>
     </Card>

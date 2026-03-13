@@ -3,24 +3,27 @@ import { cn } from '@/lib/utils'
 
 export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="w-full overflow-auto">
+    <div className="w-full overflow-x-auto">
       <table className={cn('w-full caption-bottom text-sm', className)} {...props} />
     </div>
   )
 }
 
 export function TableHeader({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
-  return <thead className={cn('border-b bg-gray-50', className)} {...props} />
+  return <thead className={cn('bg-slate-50/80', className)} {...props} />
 }
 
 export function TableBody({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
-  return <tbody className={cn('[&_tr:last-child]:border-0', className)} {...props} />
+  return <tbody className={cn('divide-y divide-slate-100', className)} {...props} />
 }
 
 export function TableRow({ className, ...props }: HTMLAttributes<HTMLTableRowElement>) {
   return (
     <tr
-      className={cn('border-b transition-colors hover:bg-gray-50/50', className)}
+      className={cn(
+        'transition-colors duration-100 hover:bg-slate-50/60',
+        className,
+      )}
       {...props}
     />
   )
@@ -30,7 +33,7 @@ export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCel
   return (
     <th
       className={cn(
-        'h-10 px-4 text-left align-middle font-medium text-gray-500 text-xs uppercase tracking-wider',
+        'h-11 px-4 text-left align-middle text-xs font-semibold uppercase tracking-wider text-slate-500',
         className,
       )}
       {...props}
@@ -39,5 +42,5 @@ export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCel
 }
 
 export function TableCell({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn('px-4 py-3 align-middle', className)} {...props} />
+  return <td className={cn('px-4 py-3.5 align-middle text-slate-700', className)} {...props} />
 }

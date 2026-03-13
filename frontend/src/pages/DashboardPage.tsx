@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Phone, Users, Briefcase, CheckCircle, Clock, TrendingUp } from 'lucide-react'
+import { Phone, Users, Briefcase, CheckCircle, Clock, TrendingUp, Activity } from 'lucide-react'
 import { getDashboard } from '@/api/endpoints'
 import { StatCard } from '@/components/ui/StatCard'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
@@ -9,11 +9,18 @@ export default function DashboardPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: () => getDashboard().then((r) => r.data),
-    refetchInterval: 30000, // refresh every 30s
+    refetchInterval: 30000,
   })
 
   if (isLoading) {
-    return <div className="text-gray-500">Loading dashboard...</div>
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+          <p className="mt-3 text-sm text-slate-500">Loading dashboard...</p>
+        </div>
+      </div>
+    )
   }
 
   const calls = data?.calls ?? {}
@@ -22,49 +29,53 @@ export default function DashboardPage() {
   const pipeline = candidates.pipeline ?? {}
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
+    <div className="space-y-8">
+      {/* Page header */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard</h1>
+        <p className="mt-1 text-sm text-slate-500">Overview of your hiring pipeline and call activity</p>
+      </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {/* Primary stats */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Calls Today"
           value={calls.today ?? 0}
-          icon={<Phone className="h-6 w-6" />}
+          icon={<Phone className="h-5 w-5" />}
         />
         <StatCard
           title="Connected"
           value={calls.connected ?? 0}
-          icon={<CheckCircle className="h-6 w-6" />}
+          icon={<CheckCircle className="h-5 w-5" />}
         />
         <StatCard
           title="Qualified Candidates"
           value={candidates.qualified ?? 0}
-          icon={<Users className="h-6 w-6" />}
+          icon={<Users className="h-5 w-5" />}
         />
         <StatCard
           title="Active Jobs"
           value={jobs.active ?? 0}
-          icon={<Briefcase className="h-6 w-6" />}
+          icon={<Briefcase className="h-5 w-5" />}
         />
       </div>
 
-      {/* Second row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      {/* Secondary stats */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
         <StatCard
           title="Avg Call Duration"
           value={`${calls.avg_duration ?? 0}s`}
-          icon={<Clock className="h-6 w-6" />}
+          icon={<Clock className="h-5 w-5" />}
         />
         <StatCard
           title="Avg AI Score"
           value={calls.avg_ai_score ?? 0}
-          icon={<TrendingUp className="h-6 w-6" />}
+          icon={<TrendingUp className="h-5 w-5" />}
         />
         <StatCard
           title="Total Calls"
           value={calls.total ?? 0}
-          icon={<Phone className="h-6 w-6" />}
+          icon={<Activity className="h-5 w-5" />}
         />
       </div>
 
@@ -74,17 +85,26 @@ export default function DashboardPage() {
           <CardTitle>Candidate Pipeline</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-4">
-            {Object.entries(pipeline).map(([status, count]) => (
-              <div key={status} className="flex items-center gap-2">
-                <Badge variant={statusVariant(status)}>{status}</Badge>
-                <span className="text-lg font-semibold text-gray-900">{count as number}</span>
-              </div>
-            ))}
-            {Object.keys(pipeline).length === 0 && (
-              <p className="text-gray-500 text-sm">No candidates yet</p>
-            )}
-          </div>
+          {Object.keys(pipeline).length > 0 ? (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+              {Object.entries(pipeline).map(([status, count]) => (
+                <div
+                  key={status}
+                  className="flex flex-col items-center rounded-lg border border-slate-100 bg-slate-50/50 p-4"
+                >
+                  <Badge variant={statusVariant(status)} className="mb-2">
+                    {status}
+                  </Badge>
+                  <span className="text-2xl font-bold text-slate-900">{count as number}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-8 text-center">
+              <Users className="mx-auto h-8 w-8 text-slate-300" />
+              <p className="mt-2 text-sm text-slate-500">No candidates in the pipeline yet</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
