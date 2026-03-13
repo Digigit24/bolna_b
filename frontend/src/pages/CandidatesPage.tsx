@@ -201,7 +201,12 @@ function AddCandidateModal({ open, onClose }: { open: boolean; onClose: () => vo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    mutation.mutate({ ...form, skills: form.skills.split(',').map((s) => s.trim()).filter(Boolean) })
+    if (!form.job) return
+    mutation.mutate({
+      ...form,
+      job: form.job || null,
+      skills: form.skills.split(',').map((s) => s.trim()).filter(Boolean),
+    })
   }
 
   return (
@@ -209,7 +214,15 @@ function AddCandidateModal({ open, onClose }: { open: boolean; onClose: () => vo
       <form onSubmit={handleSubmit} className="space-y-4">
         {mutation.isError && (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            Failed to add candidate. Please check your input and try again.
+            {(() => {
+              const errData = (mutation.error as { response?: { data?: Record<string, string[]> } })?.response?.data
+              if (errData && typeof errData === 'object') {
+                return Object.entries(errData).map(([field, msgs]) => (
+                  <div key={field}><strong className="capitalize">{field}:</strong> {Array.isArray(msgs) ? msgs.join(', ') : String(msgs)}</div>
+                ))
+              }
+              return 'Failed to add candidate. Please check your input and try again.'
+            })()}
           </div>
         )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
