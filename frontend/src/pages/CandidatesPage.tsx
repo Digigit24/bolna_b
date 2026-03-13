@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/Input'
 import { Badge, statusVariant } from '@/components/ui/Badge'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Modal } from '@/components/ui/Modal'
+import { ErrorState } from '@/components/ui/ErrorState'
+import { EmptyState } from '@/components/ui/EmptyState'
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from '@/components/ui/Table'
@@ -17,13 +19,14 @@ export default function CandidatesPage() {
   const [showModal, setShowModal] = useState(false)
   const queryClient = useQueryClient()
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['candidates', search, statusFilter],
     queryFn: () =>
       getCandidates({
         ...(search && { search }),
         ...(statusFilter && { status: statusFilter }),
       }).then((r) => r.data),
+    retry: 2,
   })
 
   const callMutation = useMutation({
@@ -34,11 +37,12 @@ export default function CandidatesPage() {
   const candidates = data?.results ?? []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-slate-500">{candidates.length} total candidates</p>
+          <h2 className="text-lg font-semibold text-slate-900">Candidates</h2>
+          <p className="text-sm text-slate-500">{isError ? 'Unable to load count' : `${candidates.length} total candidates`}</p>
         </div>
         <Button onClick={() => setShowModal(true)}>
           <Plus className="h-4 w-4" /> Add Candidate
@@ -71,7 +75,16 @@ export default function CandidatesPage() {
       <Card>
         {isLoading ? (
           <div className="space-y-3 p-6">
-            {[1, 2, 3, 4, 5].map((i) => <div key={i} className="h-12 animate-pulse rounded bg-slate-100" />)}
+            <div className="skeleton h-11 w-full" />
+            {[1, 2, 3, 4, 5].map((i) => <div key={i} className="skeleton h-14 w-full" style={{ opacity: 1 - i * 0.12 }} />)}
+          </div>
+        ) : isError ? (
+          <div className="p-6">
+            <ErrorState
+              title="Failed to load candidates"
+              message="The server may be unavailable. Please ensure the backend is running and try again."
+              onRetry={() => refetch()}
+            />
           </div>
         ) : candidates.length > 0 ? (
           <div className="overflow-x-auto">
@@ -95,7 +108,7 @@ export default function CandidatesPage() {
                     <TableRow key={c.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 text-xs font-bold text-indigo-700">
                             {c.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                           </div>
                           <div>
@@ -107,13 +120,13 @@ export default function CandidatesPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-sm">{c.job_title || '--'}</TableCell>
-                      <TableCell className="font-mono text-xs">{c.phone}</TableCell>
+                      <TableCell className="font-mono text-xs text-slate-500">{c.phone}</TableCell>
                       <TableCell className="text-sm">{c.experience_years > 0 ? `${c.experience_years} yrs` : '--'}</TableCell>
                       <TableCell>
                         <Badge variant={statusVariant(c.status)} className="capitalize">{c.status}</Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
                           <Button size="sm" variant="outline" onClick={() => callMutation.mutate(c.id)} disabled={callMutation.isPending} title="Call Candidate">
                             <Phone className="h-3.5 w-3.5" />
                           </Button>
@@ -132,18 +145,15 @@ export default function CandidatesPage() {
             </Table>
           </div>
         ) : (
-          <div className="py-16 text-center">
-            <Users className="mx-auto h-10 w-10 text-slate-300" />
-            <p className="mt-4 text-sm font-medium text-slate-600">No candidates found</p>
-            <p className="mt-1 text-xs text-slate-400">Add your first candidate to get started</p>
-            <Button className="mt-4" size="sm" onClick={() => setShowModal(true)}>
-              <Plus className="h-3.5 w-3.5" /> Add Candidate
-            </Button>
-          </div>
+          <EmptyState
+            icon={Users}
+            title="No candidates found"
+            description="Add your first candidate to get started with AI-powered screening calls."
+            action={{ label: 'Add Candidate', onClick: () => setShowModal(true), icon: <Plus className="h-3.5 w-3.5" /> }}
+          />
         )}
       </Card>
 
-      {/* Modal */}
       <AddCandidateModal open={showModal} onClose={() => setShowModal(false)} />
     </div>
   )
@@ -177,6 +187,11 @@ function AddCandidateModal({ open, onClose }: { open: boolean; onClose: () => vo
   return (
     <Modal open={open} onClose={onClose} title="Add Candidate" description="Fill in the candidate details below.">
       <form onSubmit={handleSubmit} className="space-y-4">
+        {mutation.isError && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            Failed to add candidate. Please check your input and try again.
+          </div>
+        )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Full Name <span className="text-red-500">*</span></label>

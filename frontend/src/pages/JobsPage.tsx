@@ -8,6 +8,8 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Badge, statusVariant } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
 import { Modal } from '@/components/ui/Modal'
+import { ErrorState } from '@/components/ui/ErrorState'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
 import { formatDate } from '@/lib/utils'
 
@@ -15,9 +17,10 @@ export default function JobsPage() {
   const [showModal, setShowModal] = useState(false)
   const queryClient = useQueryClient()
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['jobs'],
     queryFn: () => getJobs().then((r) => r.data),
+    retry: 2,
   })
 
   const deleteMutation = useMutation({
@@ -28,9 +31,12 @@ export default function JobsPage() {
   const jobs = data?.results ?? []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 fade-in">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500">{jobs.length} positions</p>
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">Jobs</h2>
+          <p className="text-sm text-slate-500">{isError ? 'Unable to load' : `${jobs.length} positions`}</p>
+        </div>
         <Button onClick={() => setShowModal(true)}>
           <Plus className="h-4 w-4" /> New Job
         </Button>
@@ -39,7 +45,16 @@ export default function JobsPage() {
       <Card>
         {isLoading ? (
           <div className="space-y-3 p-6">
-            {[1, 2, 3].map((i) => <div key={i} className="h-12 animate-pulse rounded bg-slate-100" />)}
+            <div className="skeleton h-11 w-full" />
+            {[1, 2, 3].map((i) => <div key={i} className="skeleton h-14 w-full" style={{ opacity: 1 - i * 0.2 }} />)}
+          </div>
+        ) : isError ? (
+          <div className="p-6">
+            <ErrorState
+              title="Failed to load jobs"
+              message="The server may be unavailable. Please ensure the backend is running and try again."
+              onRetry={() => refetch()}
+            />
           </div>
         ) : jobs.length > 0 ? (
           <div className="overflow-x-auto">
@@ -57,20 +72,27 @@ export default function JobsPage() {
                 {jobs.map((j: { id: string; title: string; status: string; location: string; created_at: string; description: string }) => (
                   <TableRow key={j.id}>
                     <TableCell>
-                      <p className="text-sm font-medium text-slate-900">{j.title}</p>
-                      {j.description && <p className="mt-0.5 max-w-md truncate text-xs text-slate-400">{j.description}</p>}
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50">
+                          <Briefcase className="h-4 w-4 text-indigo-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-900">{j.title}</p>
+                          {j.description && <p className="mt-0.5 max-w-md truncate text-xs text-slate-400">{j.description}</p>}
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell><Badge variant={statusVariant(j.status)} className="capitalize">{j.status}</Badge></TableCell>
                     <TableCell>
                       {j.location ? (
                         <span className="flex items-center gap-1 text-sm text-slate-500"><MapPin className="h-3 w-3" />{j.location}</span>
-                      ) : '--'}
+                      ) : <span className="text-sm text-slate-400">--</span>}
                     </TableCell>
                     <TableCell className="text-sm text-slate-500">{formatDate(j.created_at)}</TableCell>
                     <TableCell>
                       <button
                         onClick={() => { if (confirm('Delete this job?')) deleteMutation.mutate(j.id) }}
-                        className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                        className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -81,11 +103,12 @@ export default function JobsPage() {
             </Table>
           </div>
         ) : (
-          <div className="py-16 text-center">
-            <Briefcase className="mx-auto h-10 w-10 text-slate-300" />
-            <p className="mt-4 text-sm font-medium text-slate-600">No jobs posted</p>
-            <Button className="mt-4" size="sm" onClick={() => setShowModal(true)}><Plus className="h-3.5 w-3.5" /> New Job</Button>
-          </div>
+          <EmptyState
+            icon={Briefcase}
+            title="No jobs posted"
+            description="Create your first job posting to start receiving AI-screened candidates."
+            action={{ label: 'New Job', onClick: () => setShowModal(true), icon: <Plus className="h-3.5 w-3.5" /> }}
+          />
         )}
       </Card>
 
@@ -106,6 +129,11 @@ function CreateJobModal({ open, onClose }: { open: boolean; onClose: () => void 
   return (
     <Modal open={open} onClose={onClose} title="Create Job" description="Define the position details.">
       <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(form) }} className="space-y-4">
+        {mutation.isError && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            Failed to create job. Please try again.
+          </div>
+        )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Job Title <span className="text-red-500">*</span></label>

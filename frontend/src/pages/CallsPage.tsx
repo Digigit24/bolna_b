@@ -4,23 +4,29 @@ import { Phone, X, Headphones } from 'lucide-react'
 import { getCalls, getCallTranscript } from '@/api/endpoints'
 import { Badge, statusVariant } from '@/components/ui/Badge'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
+import { ErrorState } from '@/components/ui/ErrorState'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
 import { formatDate, formatDuration } from '@/lib/utils'
 
 export default function CallsPage() {
   const [selectedCallId, setSelectedCallId] = useState<string | null>(null)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['calls'],
     queryFn: () => getCalls().then((r) => r.data),
     refetchInterval: 10000,
+    retry: 2,
   })
 
   const calls = data?.results ?? []
 
   return (
-    <div className="space-y-6">
-      <p className="text-sm text-slate-500">{calls.length} total calls</p>
+    <div className="space-y-6 fade-in">
+      <div>
+        <h2 className="text-lg font-semibold text-slate-900">Calls</h2>
+        <p className="text-sm text-slate-500">{isError ? 'Unable to load' : `${calls.length} total calls`}</p>
+      </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
         {/* Call list */}
@@ -28,7 +34,16 @@ export default function CallsPage() {
           <Card>
             {isLoading ? (
               <div className="space-y-3 p-6">
-                {[1, 2, 3, 4].map((i) => <div key={i} className="h-12 animate-pulse rounded bg-slate-100" />)}
+                <div className="skeleton h-11 w-full" />
+                {[1, 2, 3, 4].map((i) => <div key={i} className="skeleton h-14 w-full" style={{ opacity: 1 - i * 0.15 }} />)}
+              </div>
+            ) : isError ? (
+              <div className="p-6">
+                <ErrorState
+                  title="Failed to load calls"
+                  message="The server may be unavailable. Please ensure the backend is running and try again."
+                  onRetry={() => refetch()}
+                />
               </div>
             ) : calls.length > 0 ? (
               <div className="overflow-x-auto">
@@ -47,17 +62,24 @@ export default function CallsPage() {
                       <TableRow
                         key={call.id}
                         onClick={() => setSelectedCallId(call.id)}
-                        className={`cursor-pointer ${selectedCallId === call.id ? 'bg-indigo-50' : ''}`}
+                        className={`cursor-pointer ${selectedCallId === call.id ? 'bg-indigo-50 ring-1 ring-inset ring-indigo-200' : ''}`}
                       >
-                        <TableCell className="text-sm font-medium text-slate-900">{call.candidate_name}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100">
+                              <Phone className="h-3.5 w-3.5 text-slate-500" />
+                            </div>
+                            <span className="text-sm font-medium text-slate-900">{call.candidate_name}</span>
+                          </div>
+                        </TableCell>
                         <TableCell><Badge variant={statusVariant(call.status)} className="capitalize">{call.status}</Badge></TableCell>
-                        <TableCell className="font-mono text-xs">{call.duration ? formatDuration(call.duration) : '--'}</TableCell>
+                        <TableCell className="font-mono text-xs text-slate-500">{call.duration ? formatDuration(call.duration) : '--'}</TableCell>
                         <TableCell>
                           {call.ai_score != null ? (
-                            <span className={`inline-flex items-center justify-center rounded px-2 py-0.5 text-xs font-bold ${
-                              call.ai_score >= 70 ? 'bg-emerald-50 text-emerald-700' : call.ai_score >= 40 ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'
+                            <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-0.5 text-xs font-bold ${
+                              call.ai_score >= 70 ? 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20' : call.ai_score >= 40 ? 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20' : 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20'
                             }`}>{call.ai_score}</span>
-                          ) : '--'}
+                          ) : <span className="text-sm text-slate-400">--</span>}
                         </TableCell>
                         <TableCell className="text-xs text-slate-400">{formatDate(call.created_at)}</TableCell>
                       </TableRow>
@@ -66,10 +88,11 @@ export default function CallsPage() {
                 </Table>
               </div>
             ) : (
-              <div className="py-16 text-center">
-                <Phone className="mx-auto h-10 w-10 text-slate-300" />
-                <p className="mt-4 text-sm font-medium text-slate-600">No calls yet</p>
-              </div>
+              <EmptyState
+                icon={Phone}
+                title="No calls yet"
+                description="Start calling candidates from the Candidates page to see call records here."
+              />
             )}
           </Card>
         </div>
@@ -81,8 +104,11 @@ export default function CallsPage() {
           ) : (
             <Card>
               <CardContent className="py-16 text-center">
-                <Headphones className="mx-auto h-10 w-10 text-slate-300" />
-                <p className="mt-4 text-sm text-slate-500">Select a call to view details</p>
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
+                  <Headphones className="h-6 w-6 text-slate-400" />
+                </div>
+                <p className="mt-4 text-sm font-medium text-slate-600">Call Details</p>
+                <p className="mt-1 text-xs text-slate-400">Select a call from the list to view transcript, score, and recording</p>
               </CardContent>
             </Card>
           )}
@@ -93,58 +119,67 @@ export default function CallsPage() {
 }
 
 function CallDetail({ callId, onClose }: { callId: string; onClose: () => void }) {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['call-transcript', callId],
     queryFn: () => getCallTranscript(callId).then((r) => r.data),
+    retry: 1,
   })
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Call Details</CardTitle>
-        <button onClick={onClose} className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"><X className="h-4 w-4" /></button>
+        <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><X className="h-4 w-4" /></button>
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="space-y-3"><div className="h-8 animate-pulse rounded bg-slate-100" /><div className="h-8 animate-pulse rounded bg-slate-100" /></div>
+          <div className="space-y-4">
+            <div className="skeleton h-6 w-32" />
+            <div className="skeleton h-16 w-full" />
+            <div className="skeleton h-24 w-full" />
+          </div>
+        ) : isError ? (
+          <div className="py-8 text-center">
+            <p className="text-sm text-slate-500">Could not load call details</p>
+          </div>
         ) : data ? (
           <div className="space-y-5">
             <div>
-              <p className="text-xs font-semibold uppercase text-slate-400">Candidate</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Candidate</p>
               <p className="mt-1 text-sm font-medium text-slate-900">{data.candidate_name}</p>
             </div>
             {data.ai_score != null && (
               <div>
-                <p className="text-xs font-semibold uppercase text-slate-400">AI Score</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">AI Score</p>
                 <p className="mt-1 text-2xl font-bold text-slate-900">{data.ai_score}<span className="text-sm text-slate-400">/100</span></p>
-                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                  <div className={`h-full rounded-full ${data.ai_score >= 70 ? 'bg-emerald-500' : data.ai_score >= 40 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${data.ai_score}%` }} />
+                <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div className={`h-full rounded-full transition-all ${data.ai_score >= 70 ? 'bg-emerald-500' : data.ai_score >= 40 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${data.ai_score}%` }} />
                 </div>
               </div>
             )}
             {data.recording_url && (
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase text-slate-400">Recording</p>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Recording</p>
                 <audio controls className="w-full" src={data.recording_url} />
               </div>
             )}
             {data.summary && (
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase text-slate-400">Summary</p>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Summary</p>
                 <p className="text-sm leading-relaxed text-slate-600">{data.summary}</p>
               </div>
             )}
             {data.transcript && (
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase text-slate-400">Transcript</p>
-                <div className="max-h-64 overflow-y-auto rounded-lg border border-slate-100 bg-slate-50 p-3">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Transcript</p>
+                <div className="max-h-64 overflow-y-auto rounded-lg border border-slate-100 bg-slate-50 p-4">
                   <p className="whitespace-pre-line text-xs leading-relaxed text-slate-600">{data.transcript}</p>
                 </div>
               </div>
             )}
           </div>
         ) : (
-          <p className="text-sm text-slate-400">No data</p>
+          <p className="py-8 text-center text-sm text-slate-400">No data available</p>
         )}
       </CardContent>
     </Card>
