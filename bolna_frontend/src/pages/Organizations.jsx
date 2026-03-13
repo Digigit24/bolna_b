@@ -3,12 +3,14 @@ import api from '../api/apiClient';
 import { Building2, Plus, Search, Edit, X, Check, ShieldAlert, Globe } from 'lucide-react';
 import PageLoader from '../components/ui/PageLoader';
 import { cn } from '../lib/utils';
+import useDebounce from '../hooks/useDebounce';
 import { format } from 'date-fns';
 
 export default function Organizations() {
   const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,7 +27,7 @@ export default function Organizations() {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      if (search) params.append('search', search);
+      if (debouncedSearch) params.append('search', debouncedSearch);
       
       const res = await api.get(`/api/organizations/?${params.toString()}`);
       setOrganizations(res.data.results || res.data || []);
@@ -45,7 +47,7 @@ export default function Organizations() {
 
   useEffect(() => {
     fetchOrganizations();
-  }, [search]);
+  }, [debouncedSearch]);
 
   const openAddModal = () => {
     setIsEditMode(false);

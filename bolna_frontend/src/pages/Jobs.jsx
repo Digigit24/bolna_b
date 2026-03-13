@@ -3,6 +3,7 @@ import api from '../api/apiClient';
 import { Briefcase, Plus, Search, Filter, Edit, Trash2, X, MapPin, Users } from 'lucide-react';
 import PageLoader from '../components/ui/PageLoader';
 import { cn } from '../lib/utils';
+import useDebounce from '../hooks/useDebounce';
 import { format, formatDistanceToNow } from 'date-fns';
 
 export default function Jobs() {
@@ -11,6 +12,7 @@ export default function Jobs() {
   
   // Filters
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [status, setStatus] = useState('');
 
   // Modals state
@@ -32,7 +34,7 @@ export default function Jobs() {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      if (search) params.append('search', search);
+      if (debouncedSearch) params.append('search', debouncedSearch);
       if (status) params.append('status', status);
       
       const res = await api.get(`/api/jobs/?${params.toString()}`);
@@ -54,7 +56,7 @@ export default function Jobs() {
 
   useEffect(() => {
     fetchJobs();
-  }, [search, status]);
+  }, [debouncedSearch, status]);
 
   const openAddModal = () => {
     setIsEditMode(false);

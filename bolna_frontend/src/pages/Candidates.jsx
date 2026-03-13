@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/apiClient';
-import { Users, Plus, Search, Filter, Edit, Trash2, X, FileText, CheckCircle, Mail, Phone, Briefcase } from 'lucide-react';
+import { Users, Plus, Search, Filter, Edit, Trash2, X, FileText, CheckCircle, Mail, Phone, Briefcase, ChevronDown } from 'lucide-react';
 import PageLoader from '../components/ui/PageLoader';
 import { cn } from '../lib/utils';
+import useDebounce from '../hooks/useDebounce';
 import { format } from 'date-fns';
 
 export default function Candidates() {
   const [candidates, setCandidates] = useState([]);
+  const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Filters
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [status, setStatus] = useState('');
 
   // Modals state
@@ -34,7 +37,7 @@ export default function Candidates() {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      if (search) params.append('search', search);
+      if (debouncedSearch) params.append('search', debouncedSearch);
       if (status) params.append('status', status);
       
       const res = await api.get(`/api/candidates/?${params.toString()}`);
@@ -56,7 +59,19 @@ export default function Candidates() {
 
   useEffect(() => {
     fetchCandidates();
-  }, [search, status]);
+  }, [debouncedSearch, status]);
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const res = await api.get('/api/jobs/');
+        setJobs(res.data.results || res.data || []);
+      } catch (err) {
+        console.error('Failed to fetch jobs', err);
+      }
+    };
+    fetchJobs();
+  }, []);
 
   const openAddModal = () => {
     setIsEditMode(false);
@@ -172,7 +187,7 @@ export default function Candidates() {
         <div className="relative min-w-[180px]">
           <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <select
-            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 cursor-pointer appearance-none"
+            className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 cursor-pointer appearance-none transition-all hover:bg-gray-100"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
@@ -183,6 +198,7 @@ export default function Candidates() {
             <option value="rejected">Rejected</option>
             <option value="hired">Hired</option>
           </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none group-focus-within:text-indigo-500 transition-colors" />
         </div>
       </div>
 
@@ -320,13 +336,20 @@ export default function Candidates() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Job ID (UUID optionally)</label>
-                  <input
-                    type="text" name="job"
-                    value={formData.job} onChange={handleChange}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all"
-                    placeholder="E.g., 3fa85f64..."
-                  />
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Job Posting (Optional)</label>
+                  <div className="relative group">
+                    <select
+                      name="job"
+                      value={formData.job} onChange={handleChange}
+                      className="w-full pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all appearance-none cursor-pointer hover:border-gray-300"
+                    >
+                      <option value="">Select a Job</option>
+                      {jobs.map(job => (
+                        <option key={job.id} value={job.id}>{job.title}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none group-focus-within:text-indigo-500 transition-colors" />
+                  </div>
                 </div>
 
                 <div>
@@ -350,17 +373,20 @@ export default function Candidates() {
                 
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Status</label>
-                  <select
-                    name="status"
-                    value={formData.status} onChange={handleChange}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="new">New</option>
-                    <option value="screening">Screening</option>
-                    <option value="qualified">Qualified</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="hired">Hired</option>
-                  </select>
+                  <div className="relative group">
+                    <select
+                      name="status"
+                      value={formData.status} onChange={handleChange}
+                      className="w-full pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all appearance-none cursor-pointer hover:border-gray-300"
+                    >
+                      <option value="new">New</option>
+                      <option value="screening">Screening</option>
+                      <option value="qualified">Qualified</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="hired">Hired</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none group-focus-within:text-indigo-500 transition-colors" />
+                  </div>
                 </div>
               </div>
 

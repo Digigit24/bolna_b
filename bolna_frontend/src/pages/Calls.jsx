@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../api/apiClient';
 import { PhoneCall, Play, Eye, Search, X, RefreshCw, FileText, CheckCircle, Clock } from 'lucide-react';
 import PageLoader from '../components/ui/PageLoader';
+import useDebounce from '../hooks/useDebounce';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 
@@ -13,13 +14,14 @@ export default function Calls() {
   const [callTranscript, setCallTranscript] = useState(null);
   
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [status, setStatus] = useState('');
 
   const fetchCalls = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      if (search) params.append('search', search);
+      if (debouncedSearch) params.append('search', debouncedSearch);
       if (status) params.append('status', status);
       
       const res = await api.get(`/api/calls/?${params.toString()}`);
@@ -48,7 +50,7 @@ export default function Calls() {
 
   useEffect(() => {
     fetchCalls();
-  }, [search, status]);
+  }, [debouncedSearch, status]);
 
   const handleStartCall = async () => {
     try {
