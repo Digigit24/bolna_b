@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../api/apiClient';
 import { Users, Plus, Search, Filter, Edit, Trash2, X, FileText, CheckCircle, Mail, Phone, Briefcase, ChevronDown } from 'lucide-react';
 import PageLoader from '../components/ui/PageLoader';
+import SearchableSelect from '../components/ui/SearchableSelect';
 import { cn } from '../lib/utils';
 import useDebounce from '../hooks/useDebounce';
 import { format } from 'date-fns';
@@ -108,10 +109,15 @@ export default function Candidates() {
     e.preventDefault();
     setSaving(true);
     try {
+      const payload = { ...formData };
+      if (payload.experience_years !== '' && payload.experience_years !== null) {
+        payload.experience_years = parseInt(payload.experience_years, 10);
+      }
+
       if (isEditMode && selectedCandidate) {
-        await api.patch(`/api/candidates/${selectedCandidate.id}/`, formData);
+        await api.patch(`/api/candidates/${selectedCandidate.id}/`, payload);
       } else {
-        await api.post('/api/candidates/', formData);
+        await api.post('/api/candidates/', payload);
       }
       handleCloseModal();
       fetchCandidates();
@@ -335,22 +341,14 @@ export default function Candidates() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Job Posting (Optional)</label>
-                  <div className="relative group">
-                    <select
-                      name="job"
-                      value={formData.job} onChange={handleChange}
-                      className="w-full pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all appearance-none cursor-pointer hover:border-gray-300"
-                    >
-                      <option value="">Select a Job</option>
-                      {jobs.map(job => (
-                        <option key={job.id} value={job.id}>{job.title}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none group-focus-within:text-indigo-500 transition-colors" />
-                  </div>
-                </div>
+                <SearchableSelect
+                  label="Job Posting (Optional)"
+                  name="job"
+                  value={formData.job}
+                  onChange={handleChange}
+                  options={jobs.map(j => ({ value: j.id, label: j.title }))}
+                  placeholder="Search and select job..."
+                />
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Experience (Years)</label>
