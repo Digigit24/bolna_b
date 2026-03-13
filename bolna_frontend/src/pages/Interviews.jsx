@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/apiClient';
-import { CalendarDays, Plus, Search, Filter, Edit, Trash2, X, Clock, User, Star } from 'lucide-react';
+import { CalendarDays, Plus, Search, Filter, Edit, Trash2, X, Clock, User, Star, ChevronDown } from 'lucide-react';
 import PageLoader from '../components/ui/PageLoader';
+import SearchableSelect from '../components/ui/SearchableSelect';
 import { cn } from '../lib/utils';
 import useDebounce from '../hooks/useDebounce';
 import { format } from 'date-fns';
 
 export default function Interviews() {
   const [interviews, setInterviews] = useState([]);
+  const [candidates, setCandidates] = useState([]);
+  const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Filters
@@ -64,6 +67,22 @@ export default function Interviews() {
     fetchInterviews();
   }, [debouncedSearch, status, interviewType]);
 
+  useEffect(() => {
+    const fetchSelectData = async () => {
+      try {
+        const [candRes, jobRes] = await Promise.all([
+          api.get('/api/candidates/'),
+          api.get('/api/jobs/')
+        ]);
+        setCandidates(candRes.data.results || candRes.data || []);
+        setJobs(jobRes.data.results || jobRes.data || []);
+      } catch (err) {
+        console.error('Failed to fetch modal data', err);
+      }
+    };
+    fetchSelectData();
+  }, []);
+
   const openAddModal = () => {
     setIsEditMode(false);
     setFormData({ 
@@ -110,8 +129,17 @@ export default function Interviews() {
     e.preventDefault();
     setSaving(true);
     try {
-      // Ensure scheduled_at is converted to ISO if it's set
+      // Clean up payload
       let payload = { ...formData };
+      
+      // Convert rating to integer if present, or remove if empty
+      if (payload.rating !== '' && payload.rating !== null) {
+        payload.rating = parseInt(payload.rating, 10);
+      } else {
+        delete payload.rating;
+      }
+
+      // Ensure scheduled_at is converted to ISO if it's set
       if (payload.scheduled_at) {
          payload.scheduled_at = new Date(payload.scheduled_at).toISOString();
       }
@@ -249,7 +277,6 @@ export default function Interviews() {
               <th className="py-4 pl-6 pr-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Interview</th>
               <th className="px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Candidate & Role</th>
               <th className="px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Rating</th>
               <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
@@ -281,15 +308,6 @@ export default function Interviews() {
                 </td>
                 <td className="whitespace-nowrap px-3 py-4">
                   <StatusBadge state={interview.status} />
-                </td>
-                <td className="whitespace-nowrap px-3 py-4 text-sm text-amber-500 flex items-center pt-6">
-                  {interview.rating ? (
-                    Array.from({ length: 5 }).map((_, i) => (
-                       <Star key={i} className={`h-4 w-4 ${i < interview.rating ? 'fill-current text-amber-400' : 'text-gray-300'}`} />
-                    ))
-                  ) : (
-                    <span className="text-gray-400 text-xs font-medium">Not Rated</span>
-                  )}
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
                   <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -352,52 +370,57 @@ export default function Interviews() {
             
             <form onSubmit={handleSubmit} className="p-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Candidate ID</label>
-                  <input
-                    type="text" required name="candidate"
-                    value={formData.candidate} onChange={handleChange}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 text-sm transition-all"
-                    placeholder="UUID of Candidate..."
-                  />
-                </div>
+                <SearchableSelect
+                  label="Candidate"
+                  name="candidate"
+                  required
+                  value={formData.candidate}
+                  onChange={handleChange}
+                  options={candidates.map(c => ({ value: c.id, label: c.name }))}
+                  placeholder="Search and select candidate..."
+                />
                 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Job ID</label>
-                  <input
-                    type="text" name="job"
-                    value={formData.job} onChange={handleChange}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 text-sm transition-all"
-                    placeholder="UUID of Job..."
-                  />
-                </div>
+                <SearchableSelect
+                  label="Job Posting"
+                  name="job"
+                  value={formData.job}
+                  onChange={handleChange}
+                  options={jobs.map(j => ({ value: j.id, label: j.title }))}
+                  placeholder="Search and select job..."
+                />
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Interview Type</label>
-                  <select
-                    name="interview_type"
-                    value={formData.interview_type} onChange={handleChange}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 text-sm transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="hr">HR</option>
-                    <option value="technical">Technical</option>
-                    <option value="managerial">Managerial</option>
-                    <option value="final">Final</option>
-                  </select>
+                  <div className="relative group">
+                    <select
+                      name="interview_type"
+                      value={formData.interview_type} onChange={handleChange}
+                      className="w-full pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 text-sm transition-all appearance-none cursor-pointer"
+                    >
+                      <option value="hr">HR</option>
+                      <option value="technical">Technical</option>
+                      <option value="managerial">Managerial</option>
+                      <option value="final">Final</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Status</label>
-                  <select
-                    name="status"
-                    value={formData.status} onChange={handleChange}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 text-sm transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="scheduled">Scheduled</option>
-                    <option value="completed">Completed</option>
-                    <option value="canceled">Canceled</option>
-                    <option value="no_show">No Show</option>
-                  </select>
+                  <div className="relative group">
+                    <select
+                      name="status"
+                      value={formData.status} onChange={handleChange}
+                      className="w-full pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 text-sm transition-all appearance-none cursor-pointer"
+                    >
+                      <option value="scheduled">Scheduled</option>
+                      <option value="completed">Completed</option>
+                      <option value="canceled">Canceled</option>
+                      <option value="no_show">No Show</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  </div>
                 </div>
 
                 <div>
