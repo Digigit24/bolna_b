@@ -50,14 +50,7 @@ export default function Interviews() {
       setInterviews(res.data.results || res.data || []);
     } catch (err) {
       console.error(err);
-      // Fallback dummy data for visualization
-      if (!interviews.length) {
-        setInterviews([
-          { id: '1', candidate_name: 'Alice Smith', job_title: 'Senior Frontend Engineer', interview_type: 'technical', status: 'scheduled', scheduled_at: new Date(Date.now() + 86400000).toISOString(), rating: 0, created_at: new Date().toISOString() },
-          { id: '2', candidate_name: 'Bob Johnson', job_title: 'Backend Developer', interview_type: 'hr', status: 'completed', scheduled_at: new Date(Date.now() - 86400000).toISOString(), rating: 4, feedback: 'Great communicator', created_at: new Date().toISOString() },
-          { id: '3', candidate_name: 'Charlie Davis', job_title: 'Product Manager', interview_type: 'managerial', status: 'no_show', scheduled_at: new Date().toISOString(), rating: 0, created_at: new Date().toISOString() },
-        ]);
-      }
+      setInterviews([]);
     } finally {
       setLoading(false);
     }
@@ -285,7 +278,7 @@ export default function Interviews() {
               <tr key={interview.id} className="hover:bg-indigo-50/40 transition-colors group">
                 <td className="whitespace-nowrap py-4 pl-6 pr-3">
                   <div className="flex items-center">
-                    <div className="h-10 w-10 flex-shrink-0 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center font-bold">
+                    <div className="h-10 w-10 shrink-0 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center font-bold">
                        <Clock className="w-5 h-5" />
                     </div>
                     <div className="ml-4">

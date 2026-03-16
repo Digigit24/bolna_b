@@ -29,20 +29,7 @@ export default function Calls() {
       setCalls(res.data.results || []);
     } catch (err) {
       console.error(err);
-      // Dummy data for visual scaffolding
-      if (!calls.length) {
-        setCalls([
-          {
-            id: '1', candidate_name: 'John Doe', status: 'completed', duration: 120, ai_score: 85, created_at: new Date().toISOString()
-          },
-          {
-            id: '2', candidate_name: 'Jane Smith', status: 'calling', duration: 45, ai_score: 0, created_at: new Date().toISOString()
-          },
-          {
-            id: '3', candidate_name: 'Bob Wilson', status: 'failed', duration: 0, ai_score: 0, created_at: new Date().toISOString()
-          }
-        ]);
-      }
+      setCalls([]);
     } finally {
       setLoading(false);
     }
@@ -74,9 +61,8 @@ export default function Calls() {
       setCallTranscript(tRes.data);
     } catch (err) {
       console.error(err);
-      // fallback
-      setSelectedCall({ candidate_name: 'Mock Details', status: 'completed', duration: 150, ai_score: 92 });
-      setCallTranscript({ transcript: "Hello this is AI.", summary: "Good candidate." });
+      setSelectedCall(null);
+      setCallTranscript(null);
     }
   };
 

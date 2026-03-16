@@ -46,15 +46,7 @@ export default function Jobs() {
       setJobs(res.data.results || res.data || []);
     } catch (err) {
       console.error(err);
-      // Fallback dummy data for visualization
-      if (!jobs.length) {
-        setJobs([
-          { id: '1', title: 'Senior Frontend Engineer', description: 'React and Vite expert with experience in modern CSS frameworks and state management.', requirements: '5+ years React, TypeScript expert', location: 'Remote', status: 'open', created_at: new Date().toISOString(), department: 'Engineering', applications: 24 },
-          { id: '2', title: 'Backend Developer', description: 'Python/Django expert to build scalable microservices and manage cloud infrastructure.', requirements: '3+ years Python, AWS experience', location: 'New York, NY', status: 'paused', created_at: new Date(Date.now() - 86400000).toISOString(), department: 'Engineering', applications: 12 },
-          { id: '3', title: 'Product Manager', description: 'Lead cross-functional teams to define product vision and execute strategy.', requirements: 'Agile expert, 4+ years PM experience', location: 'London, UK', status: 'closed', created_at: new Date(Date.now() - 172800000).toISOString(), department: 'Product', applications: 45 },
-          { id: '4', title: 'HR Specialist', description: 'Help us find and nurture talent across the organization.', requirements: 'HR certification, strong communication', location: 'Remote', status: 'open', created_at: new Date(Date.now() - 259200000).toISOString(), department: 'HR', applications: 8 },
-        ]);
-      }
+      setJobs([]);
     } finally {
       setLoading(false);
     }
@@ -70,7 +62,7 @@ export default function Jobs() {
       total: jobs.length,
       active: jobs.filter(j => j.status === 'open').length,
       closed: jobs.filter(j => j.status === 'closed').length,
-      applications: jobs.reduce((acc, curr) => acc + (curr.applications || 0), 0) || '142' // Fallback for UI visualization
+      applications: jobs.reduce((acc, curr) => acc + (curr.applications || 0), 0)
     };
   }, [jobs]);
 

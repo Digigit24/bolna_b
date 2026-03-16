@@ -20,27 +20,16 @@ export default function Dashboard() {
         
         // Structure depends on what the API truly returns, mocking visual structure assuming similar standard response
         // Defaulting if empty
-        setMetrics({
+      setMetrics({
           kpis: dashRes.data || { calls: {}, candidates: {}, jobs: {} },
           dailyBreakdown: Array.isArray(callsRes.data) ? callsRes.data : []
         });
       } catch (err) {
         console.error('Error fetching analytics:', err);
         setError('Failed to load dashboard metrics.');
-        // dummy data for visuals
         setMetrics({
-          kpis: { 
-            calls: { total: 8, avg_duration: 311.3, avg_ai_score: 74.9 }, 
-            candidates: { total: 8 }, 
-            jobs: { active: 3 }
-          },
-          dailyBreakdown: [
-            { date: 'Mon', calls: 120, duration: 450, success: 90 },
-            { date: 'Tue', calls: 200, duration: 600, success: 160 },
-            { date: 'Wed', calls: 150, duration: 500, success: 110 },
-            { date: 'Thu', calls: 300, duration: 1200, success: 250 },
-            { date: 'Fri', calls: 180, duration: 700, success: 140 },
-          ]
+          kpis: { calls: {}, candidates: {}, jobs: {} },
+          dailyBreakdown: []
         });
       } finally {
         setLoading(false);

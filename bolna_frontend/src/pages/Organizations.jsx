@@ -33,13 +33,7 @@ export default function Organizations() {
       setOrganizations(res.data.results || res.data || []);
     } catch (err) {
       console.error('Error fetching organizations:', err);
-      // Fallback dummy data
-      if (organizations.length === 0) {
-        setOrganizations([
-          { id: '1', name: 'Acme Corp', slug: 'acme-corp', is_active: true, created_at: new Date().toISOString() },
-          { id: '2', name: 'Globex', slug: 'globex', is_active: false, created_at: new Date().toISOString() },
-        ]);
-      }
+      setOrganizations([]);
     } finally {
       setLoading(false);
     }
@@ -163,7 +157,7 @@ export default function Organizations() {
               <tr key={org.id} className="hover:bg-indigo-50/40 transition-colors group">
                 <td className="whitespace-nowrap py-4 pl-6 pr-3">
                   <div className="flex items-center">
-                    <div className="h-10 w-10 flex-shrink-0 bg-indigo-50 rounded-xl flex items-center justify-center font-bold text-indigo-700">
+                    <div className="h-10 w-10 shrink-0 bg-indigo-50 rounded-xl flex items-center justify-center font-bold text-indigo-700">
                       {org.name ? org.name.charAt(0).toUpperCase() : 'O'}
                     </div>
                     <div className="ml-4 font-semibold text-gray-900">{org.name}</div>

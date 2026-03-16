@@ -45,14 +45,7 @@ export default function Candidates() {
       setCandidates(res.data.results || res.data || []);
     } catch (err) {
       console.error(err);
-      // Fallback dummy data for visualization
-      if (!candidates.length) {
-        setCandidates([
-          { id: '1', name: 'Alice Smith', email: 'alice@example.com', phone: '+1234567890', job_title: 'Senior Frontend Engineer', experience_years: 5, skills: 'React, Node.js', status: 'new', created_at: new Date().toISOString() },
-          { id: '2', name: 'Bob Johnson', email: 'bob@example.com', phone: '+1987654321', job_title: 'Backend Developer', experience_years: 3, skills: 'Python, Django', status: 'screening', created_at: new Date().toISOString() },
-          { id: '3', name: 'Charlie Davis', email: 'charlie@example.com', phone: '+1122334455', job_title: 'Product Manager', experience_years: 8, skills: 'Agile, Scrum', status: 'qualified', created_at: new Date().toISOString() },
-        ]);
-      }
+      setCandidates([]);
     } finally {
       setLoading(false);
     }
@@ -227,7 +220,7 @@ export default function Candidates() {
               <tr key={cand.id} className="hover:bg-indigo-50/40 transition-colors group">
                 <td className="whitespace-nowrap py-4 pl-6 pr-3">
                   <div className="flex items-center">
-                    <div className="h-10 w-10 flex-shrink-0 bg-indigo-100 rounded-full flex items-center justify-center font-bold text-indigo-700">
+                    <div className="h-10 w-10 shrink-0 bg-indigo-100 rounded-full flex items-center justify-center font-bold text-indigo-700">
                       {cand.name ? cand.name.charAt(0).toUpperCase() : 'U'}
                     </div>
                     <div className="ml-4">
